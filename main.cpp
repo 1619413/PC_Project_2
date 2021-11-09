@@ -2,8 +2,20 @@
 #include<vector>
 #include<sstream>
 #include<limits.h>
+#include <set>
 
 using namespace std;
+
+class Node{
+    public:
+    int id;
+    int dist;
+
+    Node(int indentity,int distance){
+        id=indentity;
+        dist=distance;
+    }
+};
 
 void genRandomGraph(int numNodes){
     int maxEdges=numNodes*(numNodes-1),currEdges=0;
@@ -47,20 +59,9 @@ void genRandomGraph(int numNodes){
     }
 }
 
-int minDistance(int dist[], bool sptSet[], int numNodes)
-{
-    // Initialize min value
-    int min = INT_MAX, min_index;
-
-    for (int v = 0; v < V; v++)
-        if (sptSet[v] == false && dist[v] <= min)
-            min = dist[v], min_index = v;
-
-    return min_index;
-}
 int main(){
 
-    int numNodes=3;
+    int numNodes=4;
     vector<vector<int>>adjMatrix(numNodes);
     string line,tmp;
 
@@ -91,25 +92,56 @@ int main(){
 
 
     //SERIAL APPROACH
-    vector<int>visited(1,0);//initialize with node 0
-    vector<int>weights(numNodes,0);
-    // cout<<visited[0]<<endl;
-    int nodes=numNodes;
-
-    //For everything we haven't visited
-    for(int node=0;node<numNodes;node++){
-        //Check if it is connected to the node 0
-        if(adjMatrix[0][node]==1){
-            weights[node]=1;
-        }else{
-            weights[node]=1000000;
+    auto Compare = [](Node a, Node b) { return a.dist >b.dist ;};
+    int sourceNode=0,destination=3;
+    set<Node,decltype(Compare)> minSet(Compare);//TODO: Use a hash table
+    // set all vertices to unexplored
+    vector<bool>explored(numNodes,false);
+    int dist[numNodes];
+    int prev[numNodes];
+    // For each vertex v:
+    for(int v=0;v<numNodes;v++){
+        dist[v]=INT_MAX;
+        prev[v]=-1;
+    }
+    dist[sourceNode]=0;
+    //Add all the nodes to the priority queue
+    for(int i=0;i<numNodes;i++){
+        minSet.insert(Node(i,dist[i]));
+    }
+    // while desination is not explored:
+    while(!explored[destination]){
+        // v = least-value unexplored vertex
+        Node v=*(minSet.begin());
+        minSet.erase(v);
+        // set v to explored
+        int vId=v.id;
+        explored[vId]=true;
+        // for each edge (v,w):
+        for(int i=0;i<numNodes;i++){
+            if(adjMatrix[vId][i]==1){
+            // if dist[v]+len(v,w)<dist[w]:
+                if(dist[vId]+1<dist[i]){
+                    // dist[w]=dist[v]+len(v,w)
+                    Node temp=Node(i,dist[i]);
+                    dist[i]=dist[vId]+1;
+                    minSet.erase(temp);
+                    temp=Node(i,dist[i]);
+                    minSet.insert(temp);
+                    // prev[w]=visited
+                    prev[i]=vId;
+                }
+            }
         }
-    }
-
-    while(visited.size()!=nodes){
 
     }
-
+    cout<<"The shortest path from: "<<sourceNode<<" to node: "<<destination<<" is "<<dist[destination]<<endl;
+    cout<<"The path to the destination to the source node is: ";
+    int currNode=destination;
+    while(currNode!=sourceNode){
+        cout<<currNode<<" ";
+        currNode=prev[currNode];
+    }
 
 
     return 0;
