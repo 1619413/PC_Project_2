@@ -2,7 +2,8 @@
 #include<vector>
 #include<sstream>
 #include<limits.h>
-#include <set>
+#include<algorithm>
+#include<set>
 
 using namespace std;
 
@@ -61,7 +62,7 @@ void genRandomGraph(int numNodes){
 
 int main(){
 
-    int numNodes=4;
+    int numNodes=7;
     vector<vector<int>>adjMatrix(numNodes);
     string line,tmp;
 
@@ -92,9 +93,9 @@ int main(){
 
 
     //SERIAL APPROACH
-    auto Compare = [](Node a, Node b) { return a.dist >b.dist ;};
-    int sourceNode=0,destination=3;
-    set<Node,decltype(Compare)> minSet(Compare);//TODO: Use a hash table
+    auto Compare = [](Node a, Node b) { return a.dist <b.dist ;};
+    int sourceNode=0,destination=6;
+    vector<Node>minVec;
     // set all vertices to unexplored
     vector<bool>explored(numNodes,false);
     int dist[numNodes];
@@ -107,13 +108,16 @@ int main(){
     dist[sourceNode]=0;
     //Add all the nodes to the priority queue
     for(int i=0;i<numNodes;i++){
-        minSet.insert(Node(i,dist[i]));
+        minVec.push_back(Node(i,dist[i]));
     }
+    //TODO: sort the vector
+    sort(minVec.begin(),minVec.end(),Compare);
+
     // while desination is not explored:
     while(!explored[destination]){
         // v = least-value unexplored vertex
-        Node v=*(minSet.begin());
-        minSet.erase(v);
+        Node v=minVec[0];
+        minVec.erase(minVec.begin());
         // set v to explored
         int vId=v.id;
         explored[vId]=true;
@@ -123,13 +127,17 @@ int main(){
             // if dist[v]+len(v,w)<dist[w]:
                 if(dist[vId]+1<dist[i]){
                     // dist[w]=dist[v]+len(v,w)
-                    Node temp=Node(i,dist[i]);
                     dist[i]=dist[vId]+1;
-                    minSet.erase(temp);
-                    temp=Node(i,dist[i]);
-                    minSet.insert(temp);
+                    //Find the updated node in the vector
+                    for(int j=0;j<numNodes;j++){
+                        if(minVec[j].id==i){
+                            minVec[j].dist=dist[vId]+1;
+                        }
+                    }
                     // prev[w]=visited
                     prev[i]=vId;
+                    //Sort the vector
+                    sort(minVec.begin(),minVec.end(),Compare);
                 }
             }
         }
@@ -138,10 +146,11 @@ int main(){
     cout<<"The shortest path from: "<<sourceNode<<" to node: "<<destination<<" is "<<dist[destination]<<endl;
     cout<<"The path to the destination to the source node is: ";
     int currNode=destination;
-    while(currNode!=sourceNode){
+    while(currNode!=-1){
         cout<<currNode<<" ";
         currNode=prev[currNode];
     }
+    
 
 
     return 0;
