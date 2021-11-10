@@ -117,31 +117,39 @@ int main(){
     // while desination is not explored:
     while(!explored[destination]){
         // v = least-value unexplored vertex
-        Node v=minVec[0];
-        minVec.erase(minVec.begin());
-        // set v to explored
-        int vId=v.id;
-        explored[vId]=true;
-        // for each edge (v,w):
-        for(int i=0;i<numNodes;i++){
-            if(adjMatrix[vId][i]==1){
-            // if dist[v]+len(v,w)<dist[w]:
-                if(dist[vId]+1<dist[i]){
-                    // dist[w]=dist[v]+len(v,w)
-                    dist[i]=dist[vId]+1;
-                    //Find the updated node in the vector
-                    for(int j=0;j<numNodes;j++){
-                        if(minVec[j].id==i){
-                            minVec[j].dist=dist[vId]+1;
+        for(int k=0;k<numNodes;k++){
+            Node v=minVec[k];
+            //make sure it is unexplored aswell
+            if(explored[v.id]==false){
+                minVec.erase(minVec.begin());
+                // set v to explored
+                int vId=v.id;
+                explored[vId]=true;
+                // for each edge (v,w):
+                for(int i=0;i<numNodes;i++){
+                    if(adjMatrix[vId][i]==1){
+                    // if dist[v]+len(v,w)<dist[w]:
+                        if(dist[vId]+1<dist[i]){
+                            // dist[w]=dist[v]+len(v,w)
+                            dist[i]=dist[vId]+1;
+                            //Find the updated node in the vector
+                            for(int j=0;j<numNodes;j++){
+                                if(minVec[j].id==i){
+                                    minVec[j].dist=dist[vId]+1;
+                                }
+                            }
+                            // prev[w]=visited
+                            prev[i]=vId;
+                            //Sort the vector
+                            sort(minVec.begin(),minVec.end(),Compare);
                         }
                     }
-                    // prev[w]=visited
-                    prev[i]=vId;
-                    //Sort the vector
-                    sort(minVec.begin(),minVec.end(),Compare);
                 }
+                break;
             }
         }
+
+
 
     }
     cout<<"The shortest path from: "<<sourceNode<<" to node: "<<destination<<" is "<<dist[destination]<<endl;
