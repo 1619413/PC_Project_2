@@ -93,6 +93,7 @@ int main(){
 
 
     //SERIAL APPROACH
+    //TODO: ensure the algorithm works with higher weights than 1 for each edge
     auto Compare = [](Node a, Node b) { return a.dist <b.dist ;};
     int sourceNode=0,destination=6;
     vector<Node>minVec;
@@ -150,7 +151,7 @@ int main(){
         cout<<currNode<<" ";
         currNode=prev[currNode];
     }
-    
+
 
 
     return 0;
