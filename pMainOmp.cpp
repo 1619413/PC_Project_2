@@ -20,8 +20,8 @@ class Node{
 int main(){
     int count=0;
     auto Compare = [](Node a, Node b) { return a.dist <b.dist ;};
-    int sourceNode=0,destination=3;
-    int numVertices=4;
+    int sourceNode=0,destination=6;
+    int numVertices=7;
     vector<vector<int>>adjMatrix(numVertices);
     string line,tmp;
 
@@ -51,22 +51,20 @@ int main(){
     int myLastVertexIndex;
     int numThreads;
     vector<bool>explored(numVertices,false);
-    vector<Node>path;
+    vector<int>prev(numVertices,-1);
     vector<Node>myMinVec;
     vector<int>dist(numVertices,INT_MAX);
-    int prev[numVertices];
     int globalMinimumDistance;
     int globalMinimumVertex;
     int k;
     int currVertexWeight;
     bool foundMinUnexpl;
-    
-    dist[sourceNode]=0;
-    path.push_back(Node(sourceNode,dist[sourceNode]));
 
-    #pragma omp parallel private(myId, myFirstVertexIndex, myLastVertexIndex, myMinVec, k, foundMinUnexpl,currVertexWeight) shared(dist,sourceNode, destination, explored, numThreads, globalMinimumDistance,globalMinimumVertex, path)
+    dist[sourceNode]=0;
+
+    #pragma omp parallel private(myId, myFirstVertexIndex, myLastVertexIndex, myMinVec, k, foundMinUnexpl,currVertexWeight) shared(prev,dist,sourceNode, destination, explored, numThreads, globalMinimumDistance,globalMinimumVertex)
     {
-        omp_set_num_threads(4);
+        omp_set_num_threads(7);
         myId=omp_get_thread_num();
         numThreads=omp_get_num_threads();
 
@@ -86,40 +84,35 @@ int main(){
         //sort the local vector
         sort(myMinVec.begin(),myMinVec.end(),Compare);
 
-        while(count<2){//!explored[destination]
+        while(!explored[destination]){//!explored[destination]
 
             foundMinUnexpl=false;
             //find minimum unexplored node
-            k=0;
 
-            #pragma omp critical
-                {
-                    cout<<"VERTEX ID IS: "<<myId<<endl;
-                }
-
-            while(!foundMinUnexpl&&k<myMinVec.size()){//FIXME: Never explore node 2
+            for(k=0;k<myMinVec.size();k++){//FIXME: Never explore node 2
                 Node v=myMinVec[k];
                 // #pragma omp critical
                 // {
                 //     cout<<"VERTEX ID IS: "<<v.id<<endl;
                 // }
-                
+
                 if(explored[v.id]==false){
                     // cout<<"FOUND UNEXPLORED NODE"<<endl;
-                     #pragma omp single
-                    {   
-                        cout<<"EXPLORED VECTOR IS: ";
-                        for(auto mock=0;mock<explored.size();mock++){
-                            cout<<explored[mock]<<" "; 
-                        }
-                        cout<<endl;
-                    }
+                    //  #pragma omp single
+                    // {
+                    //     // cout<<"VERTEX ID IS: "<<myId<<endl;
+                    //     cout<<"EXPLORED VECTOR IS: ";
+                    //     for(auto mock=0;mock<explored.size();mock++){
+                    //         cout<<explored[mock]<<" ";
+                    //     }
+                    //     cout<<endl;
+                    // }
                     // #pragma omp critical
                     // {
-                    //     cout<<"ID: "<<v.id<<" DIST: "<<v.dist<<" GLOB DIST: "<<globalMinimumDistance<<endl;
+                    //     cout<<"ID: "<<v.id<<" DIST: "<<v.dist<<" GLOB DIST: "<<globalMinimumDistance<<" for count: "<<count<<endl;
                     // }
                     if(v.dist<globalMinimumDistance){
-                        cout<<"FOUND SMALLER DISTANCE WITH ID: "<<v.id<<" AND EXPLORED STATUS OF: "<<explored[v.id]<<endl;
+                        // cout<<"FOUND SMALLER DISTANCE WITH ID: "<<v.id<<" AND EXPLORED STATUS OF: "<<explored[v.id]<<endl;
                         #pragma omp critical
                         {
                             globalMinimumDistance=v.dist;
@@ -128,9 +121,6 @@ int main(){
                         }
                         foundMinUnexpl=true;
                     }
-                    k++;
-                }else{
-                    k++;
                 }
 
             }
@@ -147,7 +137,7 @@ int main(){
             // #pragma omp single
             // {
             //     for(auto mock=0;mock<explored.size();mock++){
-            //         cout<<explored[mock]<<" "; 
+            //         cout<<explored[mock]<<" ";
             //     }
             //     cout<<endl;
             // }
@@ -174,14 +164,15 @@ int main(){
                             dist[myMinVec[vertexIndex].id]=dist[globalMinimumVertex]+currVertexWeight;
                             // cout<<"UPDATED DIST IS: "<<dist[myMinVec[vertexIndex].id]<<endl;
                             //Update global path
-                            path.push_back(Node(globalMinimumVertex,globalMinimumDistance));
+                            prev[myMinVec[vertexIndex].id]=globalMinimumVertex;
                         }
                         //Update weight locally
                         myMinVec[vertexIndex].dist=dist[globalMinimumVertex]+currVertexWeight;
-                        cout<<"LOCALLY UPDATED DISTANCE: "<<myMinVec[vertexIndex].dist<<" FOR VERTEX ID: "<<myMinVec[vertexIndex].id<<endl;
+                        // cout<<"LOCALLY UPDATED DISTANCE: "<<myMinVec[vertexIndex].dist<<" FOR VERTEX ID: "<<myMinVec[vertexIndex].id<<" for thread id: "<<myId<<endl;
                         //Sort the local vector
                         sort(myMinVec.begin(),myMinVec.end(),Compare);
-                    
+
+
                     }
                 }
             }
@@ -197,7 +188,7 @@ int main(){
             // #pragma omp single
             // {
             //     for(auto mock=0;mock<explored.size();mock++){
-            //         cout<<explored[mock]<<" "; 
+            //         cout<<explored[mock]<<" ";
             //     }
             //     cout<<endl;
             // }
@@ -206,14 +197,13 @@ int main(){
     }
 
     //TODO: cout the result
-    int pathLength=0;
-    cout<<"The path to: "<<destination<<" from: "<<sourceNode<<" is: ";
-    for(int hops=0;hops<path.size();hops++){
-        cout<<path[hops].id<<" ";
-        pathLength+=path[hops].dist;
+    cout<<"The shortest path from: "<<sourceNode<<" to node: "<<destination<<" is "<<dist[destination]<<endl;
+    cout<<"The path to the destination to the source node is: ";
+    int currNode=destination;
+    while(currNode!=-1){
+        cout<<currNode<<" ";
+        currNode=prev[currNode];
     }
-    cout<<endl;
-    cout<<"The total distance was: "<<pathLength<<endl;
 
     return 0;
 }
