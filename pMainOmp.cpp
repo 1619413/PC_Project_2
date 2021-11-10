@@ -204,6 +204,7 @@ int main(){
         cout<<currNode<<" ";
         currNode=prev[currNode];
     }
+    cout<<endl;
 
     return 0;
 }
