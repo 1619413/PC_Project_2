@@ -18,6 +18,7 @@ class Node{
 };
 
 int main(){
+    int count=0;
     auto Compare = [](Node a, Node b) { return a.dist <b.dist ;};
     int sourceNode=0,destination=3;
     int numVertices=4;
@@ -52,26 +53,28 @@ int main(){
     vector<bool>explored(numVertices,false);
     vector<Node>path;
     vector<Node>myMinVec;
-    int dist[numVertices];
+    vector<int>dist(numVertices,INT_MAX);
     int prev[numVertices];
     int globalMinimumDistance;
     int globalMinimumVertex;
     int k;
     int currVertexWeight;
     bool foundMinUnexpl;
-    // For each vertex v:
-    for(int v=0;v<numVertices;v++){
-        dist[v]=INT_MAX;
-        prev[v]=-1;
-    }
+    
     dist[sourceNode]=0;
     path.push_back(Node(sourceNode,dist[sourceNode]));
 
-    #pragma omp parallel private(myId, myFirstVertexIndex, myLastVertexIndex, myMinVec, k, foundMinUnexpl) shared(sourceNode, destination, explored, numThreads, globalMinimumDistance,globalMinimumVertex, path)
+    #pragma omp parallel private(myId, myFirstVertexIndex, myLastVertexIndex, myMinVec, k, foundMinUnexpl,currVertexWeight) shared(dist,sourceNode, destination, explored, numThreads, globalMinimumDistance,globalMinimumVertex, path)
     {
         omp_set_num_threads(4);
         myId=omp_get_thread_num();
         numThreads=omp_get_num_threads();
+
+        #pragma omp single
+        {
+            globalMinimumDistance=INT_MAX;
+            globalMinimumVertex=0;
+        }
 
         myFirstVertexIndex=(myId*numVertices)/numThreads;
         myLastVertexIndex=((myId+1)*numVertices)/numThreads-1;
@@ -83,24 +86,44 @@ int main(){
         //sort the local vector
         sort(myMinVec.begin(),myMinVec.end(),Compare);
 
-        while(!explored[destination]){
-            #pragma omp single
-            {
-                globalMinimumDistance=INT_MAX;
-                globalMinimumVertex=-1;
-            }
+        while(count<2){//!explored[destination]
+
             foundMinUnexpl=false;
             //find minimum unexplored node
             k=0;
-            while(!foundMinUnexpl&&k<myMinVec.size()){//FIXME: Not updating the weights correctly
-                Node v=myMinVec[k];
 
+            #pragma omp critical
+                {
+                    cout<<"VERTEX ID IS: "<<myId<<endl;
+                }
+
+            while(!foundMinUnexpl&&k<myMinVec.size()){//FIXME: Never explore node 2
+                Node v=myMinVec[k];
+                // #pragma omp critical
+                // {
+                //     cout<<"VERTEX ID IS: "<<v.id<<endl;
+                // }
+                
                 if(explored[v.id]==false){
-                    cout<<v.dist<<endl;
+                    // cout<<"FOUND UNEXPLORED NODE"<<endl;
+                     #pragma omp single
+                    {   
+                        cout<<"EXPLORED VECTOR IS: ";
+                        for(auto mock=0;mock<explored.size();mock++){
+                            cout<<explored[mock]<<" "; 
+                        }
+                        cout<<endl;
+                    }
+                    // #pragma omp critical
+                    // {
+                    //     cout<<"ID: "<<v.id<<" DIST: "<<v.dist<<" GLOB DIST: "<<globalMinimumDistance<<endl;
+                    // }
                     if(v.dist<globalMinimumDistance){
+                        cout<<"FOUND SMALLER DISTANCE WITH ID: "<<v.id<<" AND EXPLORED STATUS OF: "<<explored[v.id]<<endl;
                         #pragma omp critical
                         {
                             globalMinimumDistance=v.dist;
+                            // cout<<"GLOBAL MINIMUM DISTANCE IS: "<<globalMinimumDistance<<endl;
                             globalMinimumVertex=v.id;
                         }
                         foundMinUnexpl=true;
@@ -121,29 +144,63 @@ int main(){
                 }
             }
 
+            // #pragma omp single
+            // {
+            //     for(auto mock=0;mock<explored.size();mock++){
+            //         cout<<explored[mock]<<" "; 
+            //     }
+            //     cout<<endl;
+            // }
 
+            //Check the local vectors in myMinVec
             for(int vertexIndex=0;vertexIndex<myMinVec.size();vertexIndex++){
                 currVertexWeight=adjMatrix[globalMinimumVertex][myMinVec[vertexIndex].id];
+
+                // #pragma omp critical
+                // {
+                //     cout<<"My current vertex weight is: "<<currVertexWeight<<" for node: "<<myMinVec[vertexIndex].id<<endl;
+                // }
+                // cout<<currVertexWeight<<endl;
                 if(currVertexWeight>0){
                 // if dist[v]+len(v,w)<dist[w]:
+
+                    // cout<<"THE DISTANCE FOR GLOBAL MIN VERTEX IS "<<dist[globalMinimumVertex]<<endl;
                     if(dist[globalMinimumVertex]+currVertexWeight<dist[myMinVec[vertexIndex].id]){
+                        // cout<<"FOUND LOWER DISTANCE"<<endl;
                         // dist[w]=dist[v]+len(v,w)
                         #pragma omp critical
                         {
                             //Update weight globally
                             dist[myMinVec[vertexIndex].id]=dist[globalMinimumVertex]+currVertexWeight;
+                            // cout<<"UPDATED DIST IS: "<<dist[myMinVec[vertexIndex].id]<<endl;
                             //Update global path
                             path.push_back(Node(globalMinimumVertex,globalMinimumDistance));
                         }
                         //Update weight locally
-                        myMinVec[vertexIndex].dist=myMinVec[vertexIndex].dist+currVertexWeight;
+                        myMinVec[vertexIndex].dist=dist[globalMinimumVertex]+currVertexWeight;
+                        cout<<"LOCALLY UPDATED DISTANCE: "<<myMinVec[vertexIndex].dist<<" FOR VERTEX ID: "<<myMinVec[vertexIndex].id<<endl;
                         //Sort the local vector
                         sort(myMinVec.begin(),myMinVec.end(),Compare);
+                    
                     }
                 }
             }
 
             #pragma omp barrier
+
+            #pragma omp single
+            {
+                //Reset global minimum distance
+                globalMinimumDistance=INT_MAX;
+            }
+            count++;
+            // #pragma omp single
+            // {
+            //     for(auto mock=0;mock<explored.size();mock++){
+            //         cout<<explored[mock]<<" "; 
+            //     }
+            //     cout<<endl;
+            // }
         }
 
     }
