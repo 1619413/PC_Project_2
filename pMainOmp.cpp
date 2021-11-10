@@ -92,7 +92,7 @@ int main(){
             foundMinUnexpl=false;
             //find minimum unexplored node
             k=0;
-            while(!foundMinUnexpl&&k<myMinVec.size()){
+            while(!foundMinUnexpl&&k<myMinVec.size()){//FIXME: Not updating the weights correctly
                 Node v=myMinVec[k];
 
                 if(explored[v.id]==false){
