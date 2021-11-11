@@ -73,7 +73,7 @@ int main(){
 
         s>>tmp;
         for(int j=0;j<numNodes;j++){
-            adjMatrix[i].push_back((int)(tmp[j])-48);
+            adjMatrix[i].push_back((int)(tmp[j])-48);//TODO: NEED TO FIX WHEN WEIGHTS CONSIST OF 2 DIGITS
         }
 
 
