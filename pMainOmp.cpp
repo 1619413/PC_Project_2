@@ -86,10 +86,10 @@ int main(){
 
         while(!explored[destination]){//!explored[destination]
 
-            foundMinUnexpl=false;
+            // foundMinUnexpl=false;
             //find minimum unexplored node
 
-            for(k=0;k<myMinVec.size();k++){//FIXME: Never explore node 2
+            for(k=0;k<myMinVec.size();k++){
                 Node v=myMinVec[k];
                 // #pragma omp critical
                 // {
@@ -119,7 +119,7 @@ int main(){
                             // cout<<"GLOBAL MINIMUM DISTANCE IS: "<<globalMinimumDistance<<endl;
                             globalMinimumVertex=v.id;
                         }
-                        foundMinUnexpl=true;
+                        // foundMinUnexpl=true;
                     }
                 }
 
