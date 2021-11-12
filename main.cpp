@@ -181,7 +181,7 @@ int main(){
     int numNodes;
     vector<vector<int>>adjMatrix;
     string line,tmp;
-    // genRandomGraph(50);
+    genRandomGraph(50);
 
     //Taking input from a file
     ifstream myReadFile;

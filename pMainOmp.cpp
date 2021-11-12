@@ -237,7 +237,7 @@ int main(){
     //     }
     //     cout<<endl;
     // }
-
+    genRandomGraph(480);
     double serialStarttime, serialEndtime, parallelStarttime, parallelEndtime;
     int serialShortestDist;
     int myId;

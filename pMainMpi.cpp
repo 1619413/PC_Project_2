@@ -210,6 +210,7 @@ int main(int argc,char* argv[]){
     if(mpiRank==mpiRoot){
         int numNodes;
         string line,tmp;
+        genRandomGraph(1200);
 
             //Taking input from a file
             ifstream myReadFile;
