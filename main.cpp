@@ -5,6 +5,8 @@
 #include<algorithm>
 #include<set>
 #include<fstream>
+#include<chrono>
+#include<random>
 
 using namespace std;
 
@@ -20,37 +22,46 @@ class Node{
 };
 
 void genRandomGraph(int numNodes){
+    int row=0;
+    int col=0;
     int maxEdges=numNodes*(numNodes-1),currEdges=0;
-    float randomNum,p=0.3, currDensity=0, goalDensity=0.35;
-    bool exitLoop=false;
-    srand(time(0));
+    float randomNum,p=0.00001, currDensity=0, goalDensity=0.35;
+    // bool exitLoop=false;
+    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+    default_random_engine e(seed);
 
     //Setup adjacency matrix
     vector<vector<int>>adjMatrix(numNodes,vector<int>(numNodes,0));
     //Maximum number of edges in our graph n(n-1)/2 -----> use this for density calculation
-    for(int row=0;row<numNodes;row++){
+    for(row=0;row<numNodes;row++){
         // if(exitLoop){
         //     break;
         // }
-        for(int col=0;col<numNodes;col++){
+        for(col=0;col<numNodes;col++){
             randomNum=(float)rand()/RAND_MAX;
             if(randomNum<=p){
-                // currDensity=(float)currEdges/maxEdges;
+                currDensity=(float)currEdges/maxEdges;
                 // cout<<currDensity<<endl;
-                if(row!=col){//currDensity<goalDensity&&
-                    adjMatrix[row][col]=1;
-                    adjMatrix[col][row]=1;
-                    currEdges+=1;
+                if(row!=col){//
+                    if(currDensity<goalDensity){//Only go through one side of the main diagonal
+                        adjMatrix[row][col]=1;
+                        adjMatrix[col][row]=1;
+                        currEdges+=2;
+                    }
+                    else{
+                        row=numNodes;
+                        break;
+                    }
+
+
                 }
-                // else{
-                //     exitLoop=true;
-                //     break;
-                // }
 
             }
-        }
-    }
 
+        }
+        row+=1;
+        col+=1;
+    }
     //Random walk
     vector<int>randomWalk;
     vector<bool>vistitedRandomWalk(numNodes,false);
@@ -59,11 +70,12 @@ void genRandomGraph(int numNodes){
         randomWalk.push_back(randomWalkIndex);
     }
 
-    random_shuffle(randomWalk.begin(),randomWalk.end());
+    shuffle(randomWalk.begin(),randomWalk.end(),e);
 
     for(int randomWalkIndex=0;randomWalkIndex<randomWalk.size();randomWalkIndex++){
         if(randomWalk[randomWalkIndex]!=0){
             adjMatrix[currentNodeIndex][randomWalk[randomWalkIndex]]=1;
+            adjMatrix[randomWalk[randomWalkIndex]][currentNodeIndex]=1;
             currentNodeIndex=randomWalk[randomWalkIndex];
         }
     }
@@ -76,14 +88,30 @@ void genRandomGraph(int numNodes){
         }
         cout<<endl;
     }
+
+    ofstream myWriteFile;
+    myWriteFile.open("input.txt",ofstream::trunc);
+    if (myWriteFile.is_open()) {
+        myWriteFile<<numNodes<<"\n";
+
+        string line="";
+
+        for(int outRow=0;outRow<numNodes;outRow++){
+            for(int outCol=0;outCol<numNodes;outCol++){
+                line+=to_string(adjMatrix[outRow][outCol]);
+            }
+            myWriteFile<<line<<"\n";
+            line="";
+        }
+    }
 }
 
 int main(){
 
     int numNodes;
-    vector<vector<int>>adjMatrix(numNodes,vector<int>(numNodes,0));
+    vector<vector<int>>adjMatrix;
     string line,tmp;
-
+    genRandomGraph(50);
 
 
     //Initialize the adj matrix
@@ -108,9 +136,9 @@ int main(){
         getline(myReadFile,line);
         stringstream s(line);
         s>>numNodes;
-
-        cout<<line<<endl;
-        cout<<numNodes<<endl;
+        adjMatrix.resize(numNodes,vector<int>(numNodes,0));
+        // cout<<line<<endl;
+        // cout<<numNodes<<endl;
         for(int rowsInput=0;rowsInput<numNodes;rowsInput++){
             getline(myReadFile,line);
             stringstream s(line);
@@ -133,19 +161,12 @@ int main(){
         cout<<endl;
     }
 
-    genRandomGraph(numNodes);
-
-
-
-
-
-    // cout<<maxEdges<<endl;
 
 
     //SERIAL APPROACH
     //TODO: ensure the algorithm works with higher weights than 1 for each edge
     auto Compare = [](Node a, Node b) { return a.dist <b.dist ;};
-    int sourceNode=0,destination=6;
+    int sourceNode=0,destination=numNodes-1;
     vector<Node>minVec;
     // set all vertices to unexplored
     vector<bool>explored(numNodes,false);
@@ -209,6 +230,7 @@ int main(){
         cout<<currNode<<" ";
         currNode=prev[currNode];
     }
+    cout<<endl;
 
 
 
