@@ -1,8 +1,12 @@
 #include<iostream>
-#include<limits.h>
-#include<sstream>
 #include<vector>
+#include<sstream>
+#include<limits.h>
 #include<algorithm>
+#include<set>
+#include<fstream>
+#include<chrono>
+#include<random>
 #include<mpi.h>
 
 
@@ -39,30 +43,54 @@ int main(int argc,char* argv[]){
 
 
     if(mpiRank==mpiRoot){
+        int numNodes;
         string line,tmp;
-        globalMinimumDistance=INT_MAX;
-        globalMinimumVertex=0;
-        numVertices=4;
-        sourceNode=0;
-        destination=3;
-        //Resize the adjacency matrix based on the number of vertices
-        adjMatrix.resize(numVertices);
-        dist.resize(numVertices,INT_MAX);
 
-        dist[sourceNode]=0;
+            //Taking input from a file
+            ifstream myReadFile;
+            myReadFile.open("input.txt");
+            int rowsInput=0;
+            if (myReadFile.is_open()) {
+                getline(myReadFile,line);
+                stringstream s(line);
+                s>>numNodes;
+                adjMatrix.resize(numNodes,vector<int>(numNodes,0));
+                // cout<<line<<endl;
+                // cout<<numNodes<<endl;
+                for(int rowsInput=0;rowsInput<numNodes;rowsInput++){
+                    getline(myReadFile,line);
+                    stringstream s(line);
 
-        //Initialize the adj matrix
-        for(int i=0;i<numVertices;i++){
-            getline(cin,line);
-            stringstream s(line);
+                    s>>tmp;
+                    for(int colsInput=0;colsInput<numNodes;colsInput++){
+                        adjMatrix[rowsInput][colsInput]=(int)(tmp[colsInput])-48;//TODO: NEED TO FIX WHEN WEIGHTS CONSIST OF 2 DIGITS
+                    }
 
-            s>>tmp;
-            for(int j=0;j<numVertices;j++){
-                adjMatrix[i].push_back((int)(tmp[j])-48);//TODO: Fix this so weights can be more than one char
+                }
             }
+            myReadFile.close();
+
+            globalMinimumDistance=INT_MAX;
+            globalMinimumVertex=0;
+            numVertices=numNodes;
+            sourceNode=0;
+            destination=numVertices-1;
+            //Resize the adjacency matrix based on the number of vertices
+            dist.resize(numVertices,INT_MAX);
+            dist[sourceNode]=0;
+
+        // //Initialize the adj matrix
+        // for(int i=0;i<numVertices;i++){
+        //     getline(cin,line);
+        //     stringstream s(line);
+
+        //     s>>tmp;
+        //     for(int j=0;j<numVertices;j++){
+        //         adjMatrix[i].push_back((int)(tmp[j])-48);//TODO: Fix this so weights can be more than one char
+        //     }
 
 
-        }
+        // }
 
         //Print the adj matrix
         for(int i=0;i<numVertices;i++){
