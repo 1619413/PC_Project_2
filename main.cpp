@@ -80,14 +80,14 @@ void genRandomGraph(int numNodes){
         }
     }
 
-    cout<<endl;
-    cout<<"RANDOM GENERATED GRAPH: "<<endl;
-    for(int row=0;row<numNodes;row++){
-        for(int col=0;col<numNodes;col++){
-            cout<<adjMatrix[row][col]<<" ";
-        }
-        cout<<endl;
-    }
+    // cout<<endl;
+    // cout<<"RANDOM GENERATED GRAPH: "<<endl;
+    // for(int row=0;row<numNodes;row++){
+    //     for(int col=0;col<numNodes;col++){
+    //         cout<<adjMatrix[row][col]<<" ";
+    //     }
+    //     cout<<endl;
+    // }
 
     ofstream myWriteFile;
     myWriteFile.open("input.txt",ofstream::trunc);
@@ -106,27 +106,82 @@ void genRandomGraph(int numNodes){
     }
 }
 
+int serialDijkstra(vector<vector<int>>adjacencyMatrix, int numNodes, int sourceVert, int destVert){
+    auto Compare = [](Node a, Node b) { return a.dist <b.dist ;};
+
+    vector<Node>minVec;
+    // set all vertices to unexplored
+    vector<bool>explored(numNodes,false);
+    int dist[numNodes];
+    int prev[numNodes];
+    // For each vertex v:
+    for(int v=0;v<numNodes;v++){
+        dist[v]=INT_MAX;
+        prev[v]=-1;
+    }
+    dist[sourceVert]=0;
+    //Add all the nodes to the priority queue
+    for(int i=0;i<numNodes;i++){
+        minVec.push_back(Node(i,dist[i]));
+    }
+
+    sort(minVec.begin(),minVec.end(),Compare);
+
+    // while desination is not explored:
+    while(!explored[destVert]){
+        // v = least-value unexplored vertex
+        for(int k=0;k<numNodes;k++){
+            Node v=minVec[k];
+            //make sure it is unexplored aswell
+            if(explored[v.id]==false){
+                minVec.erase(minVec.begin());
+                // set v to explored
+                int vId=v.id;
+                explored[vId]=true;
+                // for each edge (v,w):
+                for(int i=0;i<numNodes;i++){
+                    if(adjacencyMatrix[vId][i]==1){
+                    // if dist[v]+len(v,w)<dist[w]:
+                        if(dist[vId]+1<dist[i]){
+                            // dist[w]=dist[v]+len(v,w)
+                            dist[i]=dist[vId]+1;
+                            //Find the updated node in the vector
+                            for(int j=0;j<numNodes;j++){
+                                if(minVec[j].id==i){
+                                    minVec[j].dist=dist[vId]+1;
+                                }
+                            }
+                            // prev[w]=visited
+                            prev[i]=vId;
+                            //Sort the vector
+                            sort(minVec.begin(),minVec.end(),Compare);
+                        }
+                    }
+                }
+                break;
+            }
+        }
+
+
+
+    }
+    // cout<<"The path to the destination to the source node is: ";
+    // int currNode=destVert;
+    // while(currNode!=-1){
+    //     cout<<currNode<<" ";
+    //     currNode=prev[currNode];
+    // }
+    // cout<<endl;
+
+    return dist[destVert];
+}
+
 int main(){
 
     int numNodes;
     vector<vector<int>>adjMatrix;
     string line,tmp;
-    genRandomGraph(50);
-
-
-    //Initialize the adj matrix
-    // for(int i=0;i<numNodes;i++){
-    //     getline(cin,line);
-    //     stringstream s(line);
-
-    //     s>>tmp;
-    //     for(int j=0;j<numNodes;j++){
-    //         adjMatrix[i].push_back((int)(tmp[j])-48);//TODO: NEED TO FIX WHEN WEIGHTS CONSIST OF 2 DIGITS
-    //     }
-
-
-    // }
-
+    // genRandomGraph(50);
 
     //Taking input from a file
     ifstream myReadFile;
@@ -153,86 +208,18 @@ int main(){
     myReadFile.close();
 
     //Print the adj matrix
-    cout<<"The adjacency matrix is: "<<endl;
-    for(int i=0;i<numNodes;i++){
-        for(int k=0;k<numNodes;k++){
-            cout<<adjMatrix[i][k]<<" ";
-        }
-        cout<<endl;
-    }
+    // cout<<"The adjacency matrix is: "<<endl;
+    // for(int i=0;i<numNodes;i++){
+    //     for(int k=0;k<numNodes;k++){
+    //         cout<<adjMatrix[i][k]<<" ";
+    //     }
+    //     cout<<endl;
+    // }
 
+    int sourceNode=0,destination=numNodes-1, serialShortestDist;
 
-
-    //SERIAL APPROACH
-    //TODO: ensure the algorithm works with higher weights than 1 for each edge
-    auto Compare = [](Node a, Node b) { return a.dist <b.dist ;};
-    int sourceNode=0,destination=numNodes-1;
-    vector<Node>minVec;
-    // set all vertices to unexplored
-    vector<bool>explored(numNodes,false);
-    int dist[numNodes];
-    int prev[numNodes];
-    // For each vertex v:
-    for(int v=0;v<numNodes;v++){
-        dist[v]=INT_MAX;
-        prev[v]=-1;
-    }
-    dist[sourceNode]=0;
-    //Add all the nodes to the priority queue
-    for(int i=0;i<numNodes;i++){
-        minVec.push_back(Node(i,dist[i]));
-    }
-    //TODO: sort the vector
-    sort(minVec.begin(),minVec.end(),Compare);
-
-    // while desination is not explored:
-    while(!explored[destination]){
-        // v = least-value unexplored vertex
-        for(int k=0;k<numNodes;k++){
-            Node v=minVec[k];
-            //make sure it is unexplored aswell
-            if(explored[v.id]==false){
-                minVec.erase(minVec.begin());
-                // set v to explored
-                int vId=v.id;
-                explored[vId]=true;
-                // for each edge (v,w):
-                for(int i=0;i<numNodes;i++){
-                    if(adjMatrix[vId][i]==1){
-                    // if dist[v]+len(v,w)<dist[w]:
-                        if(dist[vId]+1<dist[i]){
-                            // dist[w]=dist[v]+len(v,w)
-                            dist[i]=dist[vId]+1;
-                            //Find the updated node in the vector
-                            for(int j=0;j<numNodes;j++){
-                                if(minVec[j].id==i){
-                                    minVec[j].dist=dist[vId]+1;
-                                }
-                            }
-                            // prev[w]=visited
-                            prev[i]=vId;
-                            //Sort the vector
-                            sort(minVec.begin(),minVec.end(),Compare);
-                        }
-                    }
-                }
-                break;
-            }
-        }
-
-
-
-    }
-    cout<<"The shortest path from: "<<sourceNode<<" to node: "<<destination<<" is "<<dist[destination]<<endl;
-    cout<<"The path to the destination to the source node is: ";
-    int currNode=destination;
-    while(currNode!=-1){//TODO: Add this to a vector for comparison
-        cout<<currNode<<" ";
-        currNode=prev[currNode];
-    }
-    cout<<endl;
-
-
+    serialShortestDist=serialDijkstra(adjMatrix,numNodes,sourceNode,destination);
+    cout<<"The shortest path from: "<<sourceNode<<" to node: "<<destination<<" is "<<serialShortestDist<<endl;
 
     return 0;
 }
