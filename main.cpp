@@ -4,6 +4,7 @@
 #include<limits.h>
 #include<algorithm>
 #include<set>
+#include<fstream>
 
 using namespace std;
 
@@ -51,7 +52,24 @@ void genRandomGraph(int numNodes){
     }
 
     //Random walk
+    vector<int>randomWalk;
+    vector<bool>vistitedRandomWalk(numNodes,false);
+    int currentNodeIndex=0;
+    for(int randomWalkIndex=0; randomWalkIndex<numNodes;randomWalkIndex++){
+        randomWalk.push_back(randomWalkIndex);
+    }
 
+    random_shuffle(randomWalk.begin(),randomWalk.end());
+
+    for(int randomWalkIndex=0;randomWalkIndex<randomWalk.size();randomWalkIndex++){
+        if(randomWalk[randomWalkIndex]!=0){
+            adjMatrix[currentNodeIndex][randomWalk[randomWalkIndex]]=1;
+            currentNodeIndex=randomWalk[randomWalkIndex];
+        }
+    }
+
+    cout<<endl;
+    cout<<"RANDOM GENERATED GRAPH: "<<endl;
     for(int row=0;row<numNodes;row++){
         for(int col=0;col<numNodes;col++){
             cout<<adjMatrix[row][col]<<" ";
@@ -62,30 +80,62 @@ void genRandomGraph(int numNodes){
 
 int main(){
 
-    int numNodes=7;
-    vector<vector<int>>adjMatrix(numNodes);
+    int numNodes;
+    vector<vector<int>>adjMatrix(numNodes,vector<int>(numNodes,0));
     string line,tmp;
 
+
+
     //Initialize the adj matrix
-    for(int i=0;i<numNodes;i++){
-        getline(cin,line);
+    // for(int i=0;i<numNodes;i++){
+    //     getline(cin,line);
+    //     stringstream s(line);
+
+    //     s>>tmp;
+    //     for(int j=0;j<numNodes;j++){
+    //         adjMatrix[i].push_back((int)(tmp[j])-48);//TODO: NEED TO FIX WHEN WEIGHTS CONSIST OF 2 DIGITS
+    //     }
+
+
+    // }
+
+
+    //Taking input from a file
+    ifstream myReadFile;
+    myReadFile.open("input.txt");
+    int rowsInput=0;
+    if (myReadFile.is_open()) {
+        getline(myReadFile,line);
         stringstream s(line);
+        s>>numNodes;
 
-        s>>tmp;
-        for(int j=0;j<numNodes;j++){
-            adjMatrix[i].push_back((int)(tmp[j])-48);//TODO: NEED TO FIX WHEN WEIGHTS CONSIST OF 2 DIGITS
+        cout<<line<<endl;
+        cout<<numNodes<<endl;
+        for(int rowsInput=0;rowsInput<numNodes;rowsInput++){
+            getline(myReadFile,line);
+            stringstream s(line);
+
+            s>>tmp;
+            for(int colsInput=0;colsInput<numNodes;colsInput++){
+                adjMatrix[rowsInput][colsInput]=(int)(tmp[colsInput])-48;//TODO: NEED TO FIX WHEN WEIGHTS CONSIST OF 2 DIGITS
+            }
+
         }
-
-
     }
+    myReadFile.close();
 
     //Print the adj matrix
+    cout<<"The adjacency matrix is: "<<endl;
     for(int i=0;i<numNodes;i++){
         for(int k=0;k<numNodes;k++){
             cout<<adjMatrix[i][k]<<" ";
         }
         cout<<endl;
     }
+
+    genRandomGraph(numNodes);
+
+
 
 
 
@@ -155,7 +205,7 @@ int main(){
     cout<<"The shortest path from: "<<sourceNode<<" to node: "<<destination<<" is "<<dist[destination]<<endl;
     cout<<"The path to the destination to the source node is: ";
     int currNode=destination;
-    while(currNode!=-1){
+    while(currNode!=-1){//TODO: Add this to a vector for comparison
         cout<<currNode<<" ";
         currNode=prev[currNode];
     }
